@@ -70,6 +70,26 @@ class bencode_decoder:
         raise ValueError("Missing 'e' at the end of list")
 
     @staticmethod
+    def dictionaries_decoder(bval,i) -> tuple:
+        bencode_dictionaries_value = {}
+    
+        # validating the dictionaries format by ensuring it contains 'd'
+        if chr(bval[i]) != "d":
+            raise ValueError(f"invalid bencode dictionaries format: missing 'e'\nat index: {i}")
+        
+        i += 1 # skipping 'd'
+
+        while i < len(bval) and chr(bval[i]) != "e":
+            key,i = bencode_decoder.parse_by_type(bval,i)
+            value,i = bencode_decoder.parse_by_type(bval,i)
+            bencode_dictionaries_value[key] = value
+        
+        end_index = i + 1
+
+        return bencode_dictionaries_value, end_index
+
+
+    @staticmethod
     def parse_by_type(bval, i) -> tuple:
         # Parse the data based on its type
         if chr(bval[i]).isdigit():
@@ -79,3 +99,4 @@ class bencode_decoder:
         else:
             raise ValueError(f"Invalid bencode format at index: {i}")
 
+print(bencode_decoder.dictionaries_decoder(b"d4:datai55ee",0))
