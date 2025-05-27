@@ -1,15 +1,20 @@
 class bencode_decoder:
     @staticmethod
+    def concat_int(a):
+        return int(''.join(map(str,a)))
+
+    @staticmethod
     def string_decoder(bval, i) -> tuple:
         # Check the format to ensure the current character is a digit
         if i >= len(bval) and not chr(bval[i]).isdigit():
             raise ValueError("Invalid bencode string format")
         
         # Get the string length
-        string_length = 0
+        length = []
         while i < len(bval) and chr(bval[i]).isdigit():
-            string_length += int(bval[i:i+1])
+            length.append(int(bval[i:i+1]))
             i += 1
+        string_length = bencode_decoder.concat_int(length)
 
         # Validate the format by checking for ':'
         if not chr(bval[i]) == ":":
@@ -94,8 +99,6 @@ class bencode_decoder:
         # memastikan terdapat "e" di akhir dictionaries
         if chr(bval[i]) != "e":
             raise ValueError("missing 'e' at the end of bencode dictionaries")
-        
-
 
         end_index = i + 1
         return bencode_dictionaries_value, end_index
@@ -115,15 +118,11 @@ class bencode_decoder:
             raise ValueError(f"Invalid bencode format at index: {i} value: {chr(bval[i])}")
 
     @staticmethod
-    def decode(bval,i=0) -> tuple:
+    def decode(bval,i=0) :
         results = []
         
         while i < len(bval):
             val,i = bencode_decoder.parse_by_type(bval,i)
             results.append(val)
 
-        return results,i
-
-
-print(bencode_decoder.decode(b"i999e5:hellod4:datai888ee"))
-
+        return results
