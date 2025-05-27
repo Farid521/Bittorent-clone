@@ -9,12 +9,13 @@ def main():
         values = bencode_decoder.parse(bencode)
         print(values)
         
-    # elif command == "file_decode":
-    #     file_path = sys.argv[2]
+    elif command == "file_decode":
+        file_path = sys.argv[2]
 
-    #     with open(file_path,"r") as file:
-    #         content = file.read()
-    #         print(content)
+        with open(file_path,"rb") as file:
+            content = file.read()
+            decoded_bencode = bencode_decoder.parse(content)
+            print(decoded_bencode)
             
 if __name__ == "__main__":
     main()
