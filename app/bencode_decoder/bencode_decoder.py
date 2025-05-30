@@ -1,100 +1,115 @@
-class bencode_decoder:
-    @staticmethod
-    def concat_int(a):
-        return int(''.join(map(str, a)))
-    
-    @staticmethod
-    def string_decoder(bval, i) -> tuple:
-        # Check the format untuk memastikan karakter pertama berupa digit
-        if i >= len(bval) or not chr(bval[i]).isdigit():
-            raise ValueError("Invalid bencode string format")
-        
+class bencode:
+    def __init__(self, bencode):
+        self.bencode = bencode
+
+    def single_value_decode(self,bencode,i):
+        dispatch = {
+            'i': self.integer_decoder,
+            'l': self.list_decoder,
+            'd': self.dictionaries_decoder
+        }
+
+        d = chr(bencode[i])
+        if d.isdigit():
+            val,i = self.string_decoder(bencode,i)
+        elif d in dispatch:
+            val,i = dispatch[d](bencode,i)
+        return val, i
+
+    def decode(self,*args):
+        parsed_bencode = []
+        bencode = self.bencode
+        options = set()
+        i = 0
+
+        for option in args:
+            if isinstance(option,str):
+                options.add(option)
+            elif isinstance(option,int):
+                i = option
+
+        discpatch = {
+            'i': self.integer_decoder,
+            'l': self.list_decoder,
+            'd': self.dictionaries_decoder
+        }
+
+        while i < len(bencode):
+            d = chr(bencode[i])
+
+            if d.isdigit():
+                val,i = self.string_decoder(bencode,i)
+                parsed_bencode.append(val)
+            elif d in discpatch:
+                val,i = discpatch[d](bencode,i)
+                parsed_bencode.append(val)
+            else:
+                raise ValueError("invalid bencode format")
+
+        if "with_index" in options:
+            return (parsed_bencode, i) if len(parsed_bencode) > 1 else (parsed_bencode[0], i)
+        return parsed_bencode if len(parsed_bencode) > 1 else parsed_bencode[0]
+
+    def string_decoder(self,bencode, i=0) -> tuple:
         # Mendapatkan panjang string
         length = []
-        while i < len(bval) and chr(bval[i]).isdigit():
-            length.append(int(bval[i:i+1]))
+        while i < len(bencode) and chr(bencode[i]).isdigit():
+            length.append(int(bencode[i:i+1]))
             i += 1
-        string_length = bencode_decoder.concat_int(length)
+        string_length = int(''.join(map(str,length)))
         
         # Validasi format dengan memastikan ada ':' setelah panjang
-        if chr(bval[i]) != ":":
+        if chr(bencode[i]) != ":":
             raise ValueError(f"Missing ':' at index {i}")
         
         i += 1  # lewati ':'
-        bencode_string_value = bval[i:i+string_length]
+        bencode_string_value = bencode[i:i+string_length]
         end_index = i + string_length
         return bencode_string_value, end_index
 
-    @staticmethod
-    def integer_decoder(bval, i) -> tuple:
-        if chr(bval[i]) != "i":
-            raise ValueError(f"Invalid bencode integer format at index: {i}")
-        
+    def integer_decoder(self,bencode, i=0) -> tuple:
+
         i += 1  # lewati 'i'
         bencode_integer_value = b""
-        while i < len(bval) and chr(bval[i]) != "e":
-            bencode_integer_value += bval[i:i+1]
+        while i < len(bencode) and chr(bencode[i]) != "e":
+            bencode_integer_value += bencode[i:i+1]
             i += 1
         end_index = i + 1  # lewati 'e'
         return bencode_integer_value, end_index
         
-    @staticmethod
-    def list_decoder(bval, i) -> tuple:
+    def list_decoder(self, bencode, i) -> tuple:
+
         bencode_list_value = []
-        if i >= len(bval) or chr(bval[i]) != "l":
-            raise ValueError(f"Invalid format at index {i} value: {chr(bval[i])}")
-        
+
         i += 1  # lewati 'l'
-        while i < len(bval):
-            if chr(bval[i]) == "e":
+        while i < len(bencode):
+            if chr(bencode[i]) == "e":
                 i += 1  # lewati 'e'
                 return bencode_list_value, i
-            if i >= len(bval):
-                raise ValueError(f"Unexpected end of data at index {i}")
-            value, i = bencode_decoder.parse_by_type(bval, i)
-            bencode_list_value.append(value)
-        
-        raise ValueError("Missing 'e' at the end of list")
 
-    @staticmethod
-    def dictionaries_decoder(bval, i) -> tuple:
+            if i >= len(bencode):
+                raise ValueError(f"Unexpected end of data at index {i}")
+
+            value, i = self.single_value_decode(bencode,i)
+            bencode_list_value.append(value)
+
+        return bencode_list_value, i
+    
+    def dictionaries_decoder(self,bencode,i):
         bencode_dictionaries_value = {}
-        if chr(bval[i]) != "d":
-            raise ValueError(f"Invalid bencode dictionaries format: missing 'd' at index {i}")
         
         i += 1  # lewati 'd'
-        while i < len(bval) and chr(bval[i]) != "e":
-            key, i = bencode_decoder.parse_by_type(bval, i)
-            if chr(bval[i]) == "e":
-                raise ValueError("dictionaries must be in <key:value> format")
-            value, i = bencode_decoder.parse_by_type(bval, i)
-            bencode_dictionaries_value[key] = value        
-    
-        if chr(bval[i]) != "e":
+        while i < len(bencode) and chr(bencode[i]) != 'e':
+            
+            key,i = self.single_value_decode(bencode,i)
+            val,i = self.single_value_decode(bencode,i)
+
+            bencode_dictionaries_value[key] = val
+        if chr(bencode[i]) != "e":
             raise ValueError("Missing 'e' at the end of bencode dictionaries")
         
         end_index = i + 1  # lewati 'e'
         return bencode_dictionaries_value, end_index
-
-    @staticmethod
-    def parse_by_type(bval, i) -> tuple:
-        if chr(bval[i]).isdigit():
-            return bencode_decoder.string_decoder(bval, i)
-        elif chr(bval[i]) == "i":
-            return bencode_decoder.integer_decoder(bval, i)
-        elif chr(bval[i]) == "l":
-            return bencode_decoder.list_decoder(bval, i)
-        elif chr(bval[i]) == "d":
-            return bencode_decoder.dictionaries_decoder(bval, i)
-        else:
-            raise ValueError(f"Invalid bencode format at index: {i} value: {chr(bval[i])}")
-
-    @staticmethod
-    def parse(bval, i=0):
-        if not isinstance(bval, bytes):
-            raise ValueError("Input data bencode harus berupa byte string (bytes)")
-        results = []
-        while i < len(bval):
-            val, i = bencode_decoder.parse_by_type(bval, i)
-            results.append(val)
-        return results
+    
+data = bencode(b'd4:datai8888ee')
+print(data.decode())

@@ -3,5 +3,5 @@ import bencodepy
 
 with open("./sample.torrent", 'rb') as file:
     content = file.read()
-    decoded = bencode_decoder.decode(content)
+    decoded = bencode_decoder.parse(content)
     print(decoded[0])
