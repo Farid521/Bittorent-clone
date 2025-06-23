@@ -245,6 +245,7 @@ class BencodeDecoder:
         # Calculate info hash
         raw_info_bencode = self.encode(info_dict)
         hashed_info_bencode = hashlib.sha1(raw_info_bencode).hexdigest()
+        bytes_info_hash = hashlib.sha1(raw_info_bencode).digest()
 
         # Process pieces
         pieces_length = info_dict.get(b'piece length')
@@ -257,6 +258,7 @@ class BencodeDecoder:
             b'Tracker URL': tracker_url,
             b'Length': length,
             b'Info Hash': hashed_info_bencode,
+            b'Bytes Info Hash': bytes_info_hash,
             b'Piece Length': pieces_length,
             b'Piece Hashes': piece_hashes
         }
