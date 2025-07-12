@@ -4,7 +4,6 @@ from typing import Union, Tuple, List, Dict, Any, Optional
 class BencodeDecoder:
     """
     A class for encoding and decoding bencode format data.
-    Bencode is a simple encoding format used by BitTorrent for storing and transmitting data.
     """
     
     def __init__(self, data: Optional[bytes] = None):
@@ -17,9 +16,9 @@ class BencodeDecoder:
         self.bencode = data
 
     def __str__(self) -> str:
-        return f'bencode {self.bencode}'
+        return f'Raw Bencode: {self.bencode}'
 
-    def encode(self, data: Any = None) -> bytes:
+    def encode(self, data: any = None) -> bytes:
         """
         Encode Python data structures to bencode format.
 
@@ -162,7 +161,7 @@ class BencodeDecoder:
         Decode a bencoded integer.
         Format: i<integer>e
         """
-        index += 1  # Skip 'i'
+        index += 1 
         end_index = index
         
         # Find the end marker 'e'
@@ -221,7 +220,7 @@ class BencodeDecoder:
             
         raise ValueError("Missing 'e' at end of dictionary")
 
-    def _get_info(self, decoded_data: Dict[bytes, Any]) -> Dict:
+    def _get_info(self, decoded_data: Dict[bytes, Any]) -> Dict[bytes,Any]:
         """
         Extract torrent info hash and related data.
         
@@ -230,7 +229,7 @@ class BencodeDecoder:
             original_data: Original bencoded data
             
         Returns:
-            Tuple of (tracker_url, length, info_hash, piece_length, piece_hashes)
+            Dictionaries of (tracker_url, length, info_hash, piece_length, piece_hashes)
         """
         if not isinstance(decoded_data, dict) or b'info' not in decoded_data:
             raise ValueError("Invalid torrent data: missing 'info' section")
