@@ -249,7 +249,6 @@ class BencodeDecoder:
         # Process pieces
         pieces_length = info_dict.get(b'piece length')
 
-
         pieces = info_dict.get(b'pieces', b'')
         piece_hashes = [pieces[i:i+20].hex() for i in range(0, len(pieces), 20)]
 
@@ -263,4 +262,3 @@ class BencodeDecoder:
         }
         
         return bencode_info
-    

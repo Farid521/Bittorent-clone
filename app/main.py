@@ -36,10 +36,15 @@ def main() -> None:
     elif command == 'file_decode':
         options: str = sys.argv[3] if len(sys.argv) > 3 else None 
         raw_bencode: bytes = torrent_file_read(sys.argv[2])
-        
+        decoded_bencode = BencodeDecoder(raw_bencode).decode()
+
         if options == 'peer_discover':
             con: object = Peer(raw_bencode)
-            print(con.discover())
+            con.handshake('165.232.38.164', 51433)
+            return
+        
+        decoded_bencode = BencodeDecoder(raw_bencode).decode()
+        print(decoded_bencode)
 
 if __name__ == "__main__":
     main()
